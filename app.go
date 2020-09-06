@@ -1,17 +1,21 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"encoding/json"
 
 	"github.com/gorilla/mux"
 
 	"github.com/karanrn/go-rest-api/models"
 )
 
-
 var emps []models.Employee
+
+func Homepage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Welcome to the Homepage")
+}
 
 func GetEmployees(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(emps)
@@ -30,6 +34,7 @@ func GetEmployee(w http.ResponseWriter, r *http.Request) {
 
 func AddEmployee(w http.ResponseWriter, r *http.Request) {
 	var emp models.Employee
+	// Using decoder because we are reading from the HTTP Stream
 	_ = json.NewDecoder(r.Body).Decode(&emp)
 	emps = append(emps, emp)
 	json.NewEncoder(w).Encode(emp)
@@ -37,9 +42,11 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
-	emps = append(emps, models.Employee{Id:"1", FirstName:"Karan", LastName:"Nadagoudar", Age:25})
-	emps = append(emps, models.Employee{Id:"2", FirstName:"John", LastName:"Wick", Age:25})
+	emps = append(emps, models.Employee{Id: "1", FirstName: "Karan", LastName: "Nadagoudar", Age: 25})
+	emps = append(emps, models.Employee{Id: "2", FirstName: "John", LastName: "Wick", Age: 25})
 
+	// Routes for the employee resource
+	router.HandleFunc("/", Homepage).Methods("GET")
 	router.HandleFunc("/employees", GetEmployees).Methods("GET")
 	router.HandleFunc("/employees/{id}", GetEmployee).Methods("GET")
 	router.HandleFunc("/employees", AddEmployee).Methods("POST")

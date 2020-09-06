@@ -5,8 +5,8 @@ type Employees struct {
 }
 
 type Employee struct {
-	Id string
-	FirstName string
-	LastName string
-	Age int
+	Id string `json:"id,omitempty"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName string `json:"last_name,omitempty"`
+	Age int `json:"age,omitempty"`
 }
