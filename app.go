@@ -42,7 +42,7 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&emp)
 	if err != nil {
 		// Handle error
-		json.NewEncoder(w).Encode("{'error': 'Error in decoding JSON'}")
+		json.NewEncoder(w).Encode(`{'error': 'Error in decoding JSON'}`)
 		return
 	}
 	emps = append(emps, emp)
@@ -50,7 +50,8 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	router := mux.NewRouter()
+	router := mux.NewRouter().PathPrefix("/api").Subrouter().StrictSlash(false)
+
 	emps = append(emps, models.Employee{ID: "1", FirstName: "Karan", LastName: "Nadagoudar", Age: 25})
 	emps = append(emps, models.Employee{ID: "2", FirstName: "John", LastName: "Wick", Age: 25})
 
