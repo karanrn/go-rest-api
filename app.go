@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/time/rate"
 
 	"github.com/karanrn/go-rest-api/models"
 )
@@ -49,6 +50,21 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(emp)
 }
 
+// Initalizing token bucket using rate
+var limiter = rate.NewLimiter(1, 3)
+
+// Serves next request if token is available else rejects request
+func limit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if limiter.Allow() == false {
+			http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	router := mux.NewRouter().PathPrefix("/api").Subrouter().StrictSlash(false)
 
@@ -61,5 +77,5 @@ func main() {
 	router.HandleFunc("/employees/{id}", GetEmployee).Methods("GET")
 	router.HandleFunc("/employees", AddEmployee).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", limit(router)))
 }
