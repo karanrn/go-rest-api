@@ -8,7 +8,12 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/time/rate"
 
+	auth "github.com/karanrn/go-rest-api/authentication"
 	emp "github.com/karanrn/go-rest-api/employee"
+)
+
+const (
+	PORT = ":8080"
 )
 
 // Homepage of the REST API
@@ -41,7 +46,7 @@ func main() {
 	router.HandleFunc("/", Homepage).Methods("GET")
 	router.HandleFunc("/employees", emp.GetEmployees).Methods("GET")
 	router.HandleFunc("/employees/{id:[0-9]+}", emp.GetEmployee).Methods("GET")
-	router.HandleFunc("/employees", emp.AddEmployee).Methods("POST")
+	router.Handle("/employees", auth.Authorize(http.HandlerFunc(emp.AddEmployee))).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":8080", limit(router)))
+	log.Fatal(http.ListenAndServe(PORT, limit(router)))
 }
