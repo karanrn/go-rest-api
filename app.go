@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	// PORT number for the web server
 	PORT = ":8080"
 )
 
