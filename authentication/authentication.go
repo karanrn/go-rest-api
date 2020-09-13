@@ -8,6 +8,10 @@ import (
 // AuthMiddleware implements authentication/authorization
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		/*
+			Please use better authentication/authorization strategy.
+			Like JWT or OAuth
+		*/
 		if r.Header.Get("Authorization") == "JOHN_SNOW" {
 			next.ServeHTTP(w, r)
 		} else {

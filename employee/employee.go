@@ -16,9 +16,6 @@ type Employee struct {
 	Age       int32  `json:"age,omitempty"`
 }
 
-// Emps is slice of Employee type
-var Emps []Employee
-
 // GetEmployees pulls/gets all the employees
 func GetEmployees(w http.ResponseWriter, r *http.Request) {
 	res := []Employee{}
