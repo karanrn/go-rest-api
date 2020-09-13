@@ -40,14 +40,11 @@ func limit(next http.Handler) http.Handler {
 func main() {
 	router := mux.NewRouter().PathPrefix("/api").Subrouter().StrictSlash(false)
 
-	emp.Emps = append(emp.Emps, emp.Employee{ID: 1, FirstName: "Karan", LastName: "Nadagoudar", Age: 25})
-	emp.Emps = append(emp.Emps, emp.Employee{ID: 2, FirstName: "John", LastName: "Wick", Age: 25})
-
 	// Routes for the employee resource
 	router.HandleFunc("/", Homepage).Methods("GET")
 	router.HandleFunc("/employees", emp.GetEmployees).Methods("GET")
 	router.HandleFunc("/employees/{id:[0-9]+}", emp.GetEmployee).Methods("GET")
-	router.Handle("/employees", auth.Authorize(http.HandlerFunc(emp.AddEmployee))).Methods("POST")
+	router.Handle("/employees", auth.AuthMiddleware(http.HandlerFunc(emp.AddEmployee))).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(PORT, limit(router)))
 }

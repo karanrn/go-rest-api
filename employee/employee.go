@@ -3,15 +3,10 @@ package employee
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/karanrn/go-rest-api/database"
 )
-
-// Employees type is array/list of Employee
-type Employees struct {
-	Employees []Employee
-}
 
 // Employee type holds information about an employee
 type Employee struct {
@@ -26,20 +21,46 @@ var Emps []Employee
 
 // GetEmployees pulls/gets all the employees
 func GetEmployees(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(Emps)
+	res := []Employee{}
+	db := database.DBConn()
+	defer db.Close()
+
+	selectStmt, err := db.Query("SELECT id, first_name, last_name, age FROM employee ORDER BY id")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	emp := Employee{}
+	for selectStmt.Next() {
+		err = selectStmt.Scan(&emp.ID, &emp.FirstName, &emp.LastName, &emp.Age)
+		if err != nil {
+			panic(err.Error())
+		}
+		res = append(res, emp)
+	}
+	json.NewEncoder(w).Encode(res)
 }
 
 // GetEmployee pulls/gets particular employee basis Id
 func GetEmployee(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, _ := strconv.ParseInt(params["id"], 10, 64)
-	for _, emp := range Emps {
-		if emp.ID == id {
-			json.NewEncoder(w).Encode(emp)
-			return
+	empID := mux.Vars(r)["id"]
+
+	db := database.DBConn()
+	defer db.Close()
+
+	selectStmt, err := db.Query("SELECT id, first_name, last_name, age FROM employee WHERE id=?", empID)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	emp := Employee{}
+	for selectStmt.Next() {
+		err = selectStmt.Scan(&emp.ID, &emp.FirstName, &emp.LastName, &emp.Age)
+		if err != nil {
+			panic(err.Error())
 		}
 	}
-	json.NewEncoder(w).Encode(&Employee{})
+	json.NewEncoder(w).Encode(emp)
 }
 
 // AddEmployee adds employee to the database
@@ -52,6 +73,16 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(`{'error': 'Error in decoding JSON'}`)
 		return
 	}
-	Emps = append(Emps, emp)
+
+	// Add employee to database
+	db := database.DBConn()
+	defer db.Close()
+
+	insertStmt, err := db.Prepare("INSERT INTO employee (id, first_name, last_name, age) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		panic(err.Error())
+	}
+	insertStmt.Exec(emp.ID, emp.FirstName, emp.LastName, emp.Age)
+
 	json.NewEncoder(w).Encode(emp)
 }
