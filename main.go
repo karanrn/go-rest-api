@@ -23,14 +23,24 @@ func Homepage(w http.ResponseWriter, r *http.Request) {
 }
 
 // Initalizing token bucket using rate
-var limiter = rate.NewLimiter(1, 3)
+var limiters = map[string]*rate.Limiter{
+	"Authorized":   rate.NewLimiter(2, 10),
+	"Unauthorized": rate.NewLimiter(1, 3),
+}
 
 // Serves next request if token is available else rejects request
-func limit(next http.Handler) http.Handler {
+func rateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if limiter.Allow() == false {
-			http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
-			return
+		if auth.Authorize(r.Header.Get("Authorization")) {
+			if !limiters["Authorized"].Allow() {
+				http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
+				return
+			}
+		} else {
+			if !limiters["Unauthorized"].Allow() {
+				http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
+				return
+			}
 		}
 
 		next.ServeHTTP(w, r)
@@ -44,7 +54,7 @@ func main() {
 	router.HandleFunc("/", Homepage).Methods("GET")
 	router.HandleFunc("/employees", emp.GetEmployees).Methods("GET")
 	router.HandleFunc("/employees/{id:[0-9]+}", emp.GetEmployee).Methods("GET")
-	router.Handle("/employees", auth.AuthMiddleware(http.HandlerFunc(emp.AddEmployee))).Methods("POST")
+	router.Handle("/employees", http.HandlerFunc(emp.AddEmployee)).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(PORT, limit(router)))
+	log.Fatal(http.ListenAndServe(PORT, rateLimitMiddleware(router)))
 }

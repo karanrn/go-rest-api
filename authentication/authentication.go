@@ -5,8 +5,8 @@ import (
 	"net/http"
 )
 
-// AuthMiddleware implements authentication/authorization
-func AuthMiddleware(next http.Handler) http.Handler {
+// Authentication implements authentication/authorization
+func Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		/*
 			Please use better authentication/authorization strategy.
@@ -20,4 +20,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			w.Write([]byte("Missing/Wrong Token"))
 		}
 	})
+}
+
+// Authorize allows if user is valid
+func Authorize(token string) bool {
+	if token == "JOHN_SNOW" {
+		return true
+	}
+	return false
 }
