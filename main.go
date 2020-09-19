@@ -54,7 +54,8 @@ func main() {
 	router.HandleFunc("/", Homepage).Methods("GET")
 	router.HandleFunc("/employees", emp.GetEmployees).Methods("GET")
 	router.HandleFunc("/employees/{id:[0-9]+}", emp.GetEmployee).Methods("GET")
-	router.Handle("/employees", http.HandlerFunc(emp.AddEmployee)).Methods("POST")
+	router.HandleFunc("/employees", emp.AddEmployee).Methods("POST")
+	router.HandleFunc("/employees/{id:[0-9]+}", emp.DeleteEmployee).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(PORT, rateLimitMiddleware(router)))
 }

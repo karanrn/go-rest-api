@@ -2,6 +2,7 @@ package employee
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -79,7 +80,34 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
-	insertStmt.Exec(emp.ID, emp.FirstName, emp.LastName, emp.Age)
+	_, err = insertStmt.Exec(emp.ID, emp.FirstName, emp.LastName, emp.Age)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'Internal Error'}`)
+		panic(err.Error())
+	}
 
 	json.NewEncoder(w).Encode(emp)
+}
+
+// DeleteEmployee removes employee basis emp_id
+func DeleteEmployee(w http.ResponseWriter, r *http.Request) {
+	empID := mux.Vars(r)["id"]
+
+	db := database.DBConn()
+	defer db.Close()
+
+	delStmt, err := db.Prepare("DELETE FROM employee WHERE id=?")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	_, err = delStmt.Exec(empID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'Internal Error'}`)
+		panic(err.Error())
+	}
+
+	json.NewEncoder(w).Encode(fmt.Sprintf(`{'message': %v empolyee deleted}`, empID))
 }
