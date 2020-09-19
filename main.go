@@ -56,6 +56,7 @@ func main() {
 	router.HandleFunc("/employees/{id:[0-9]+}", emp.GetEmployee).Methods("GET")
 	router.HandleFunc("/employees", emp.AddEmployee).Methods("POST")
 	router.HandleFunc("/employees/{id:[0-9]+}", emp.DeleteEmployee).Methods("DELETE")
+	router.HandleFunc("/employees/upload", emp.LoadCSV).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(PORT, rateLimitMiddleware(router)))
 }

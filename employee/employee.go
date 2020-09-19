@@ -1,9 +1,13 @@
 package employee
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/karanrn/go-rest-api/database"
@@ -14,7 +18,7 @@ type Employee struct {
 	ID        int64  `json:"id,omitempty"`
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
-	Age       int32  `json:"age,omitempty"`
+	Age       int64  `json:"age,omitempty"`
 }
 
 // GetEmployees pulls/gets all the employees
@@ -36,6 +40,8 @@ func GetEmployees(w http.ResponseWriter, r *http.Request) {
 		}
 		res = append(res, emp)
 	}
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
 }
 
@@ -58,6 +64,8 @@ func GetEmployee(w http.ResponseWriter, r *http.Request) {
 			panic(err.Error())
 		}
 	}
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(emp)
 }
 
@@ -87,6 +95,7 @@ func AddEmployee(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(emp)
 }
 
@@ -109,5 +118,91 @@ func DeleteEmployee(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(fmt.Sprintf(`{'message': %v empolyee deleted}`, empID))
+}
+
+// LoadCSV adds employee details from the uploaded file
+func LoadCSV(w http.ResponseWriter, r *http.Request) {
+	// Parse multipart upload, maximum of 10 MB file
+	// Left shift 20 for MB
+	r.ParseMultipartForm(5 << 20)
+
+	file, handler, err := r.FormFile("EmployeesFile")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'Error Retrieving the file.'}`)
+		panic(err.Error())
+	}
+	defer file.Close()
+
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+
+	// Create temporary file in tempdir
+	tempFile, err := ioutil.TempFile("tempdir", "upload-*.csv")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'Internal error, Upload the file again.'}`)
+		panic(err.Error())
+	}
+	defer tempFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'Internal error, Upload the file again.'}`)
+		panic(err.Error())
+	}
+	tempFile.Write(fileBytes)
+
+	// Read CSV and add employees
+	csvFile, err := os.Open(tempFile.Name())
+	defer csvFile.Close()
+	if err != nil {
+		fmt.Printf("Error opening file %v : %v\n", tempFile.Name(), err)
+	}
+
+	csvReader := csv.NewReader(csvFile)
+	csvLines, err := csvReader.ReadAll()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'Error reading CSV file, Upload the file again.'}`)
+		panic(err.Error())
+	}
+
+	var data []Employee
+	for _, line := range csvLines[1:] {
+		id, _ := strconv.ParseInt(line[0], 10, 64)
+		age, _ := strconv.ParseInt(line[3], 10, 64)
+
+		row := Employee{
+			ID:        id,
+			FirstName: line[1],
+			LastName:  line[2],
+			Age:       age,
+		}
+
+		data = append(data, row)
+	}
+
+	// Prepare sql
+	db := database.DBConn()
+	defer db.Close()
+
+	bulkInsertStmt, err := db.Prepare("INSERT INTO employee (id, first_name, last_name, age) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for _, row := range data {
+		// Implement Upsert
+		bulkInsertStmt.Exec(row.ID, row.FirstName, row.LastName, row.Age)
+	}
+
+	// Remove temp file
+	err = os.Remove(tempFile.Name())
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Fprintf(w, "File upload successful")
 }
