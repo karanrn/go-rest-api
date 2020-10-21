@@ -1,11 +1,21 @@
-
 services:
   db:
     image: mysql:latest
-    #container_name: app_mysql
     ports:
       - "3306:3306"
     volumes:
       - /home/karan/go/src/github.com/karanrn/go-rest-api/mysql/:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${root_password}
+      MYSQL_ROOT_PASSWORD: "${ROOT_PASSWORD}"
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DBUSER: "${DB_USER}"
+      DBPASSWORD: "${DB_PASSWORD}"
+      DBNAME: api
+      DBHOST: db
+      DBPORT: 3306
+    depends_on:
+      - db

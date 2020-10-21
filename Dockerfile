@@ -9,12 +9,4 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=buildContainer /go/src/app/restapi .
 
-ENV DBUSER root
-ENV DBPASSWORD jobs@123
-ENV DBNAME api
-ENV DBHOST localhost
-ENV DBPORT 3306
-
-EXPOSE 8080
-
 CMD ["./restapi"]
