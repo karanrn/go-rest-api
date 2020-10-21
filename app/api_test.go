@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	emp "github.com/karanrn/go-rest-api/employee"
+	emp "github.com/karanrn/go-rest-api/app/employee"
 )
 
 func TestGetEmployees(t *testing.T) {

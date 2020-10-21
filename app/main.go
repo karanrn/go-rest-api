@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/time/rate"
 
-	auth "github.com/karanrn/go-rest-api/authentication"
-	emp "github.com/karanrn/go-rest-api/employee"
+	auth "github.com/karanrn/go-rest-api/app/authentication"
+	emp "github.com/karanrn/go-rest-api/app/employee"
 )
 
 const (

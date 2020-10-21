@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/karanrn/go-rest-api/database"
+	"github.com/karanrn/go-rest-api/app/database"
 )
 
 // Employee type holds information about an employee

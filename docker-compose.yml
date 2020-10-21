@@ -9,10 +9,3 @@ services:
       - /home/karan/go/src/github.com/karanrn/go-rest-api/mysql/:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${root_password}
-    # deploy:
-    #   mode: replicated
-    #   replicas: 2
-    #   resources:
-    #     limits:
-    #       cpus: '0.50'
-    #       memory: 500M
